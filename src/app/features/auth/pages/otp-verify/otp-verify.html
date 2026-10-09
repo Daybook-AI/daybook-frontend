@@ -1,0 +1,161 @@
+<div class="min-h-dvh bg-[#0F1115] text-[#F4F1EA] flex items-center justify-center px-5 py-6">
+    <div class="w-full max-w-[390px]">
+
+        <!-- Brand -->
+        <div class="text-center mb-8">
+
+            <div class="flex items-center justify-center gap-2.5">
+
+                <div
+                    class="w-9 h-9 rounded-xl border border-[#D9A441]/35 bg-[#D9A441]/[0.06] flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="#D9A441" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3v18"></path>
+                        <path d="M5 7c2.5-2 4.5-2 7 0s4.5 2 7 0"></path>
+                        <path d="M5 17c2.5-2 4.5-2 7 0s4.5 2 7 0"></path>
+                    </svg>
+                </div>
+
+                <span class="text-xl font-semibold tracking-[-0.02em]">
+                    Daybook
+                </span>
+
+            </div>
+
+            <p class="mt-1 text-[9px] tracking-[0.2em] uppercase text-[#9A9DA5]">
+                Powered by AI
+            </p>
+
+        </div>
+
+
+        <!-- Heading -->
+        <div class="mb-8">
+
+            <h1 class="text-[27px] leading-[1.15] font-semibold tracking-[-0.035em]">
+                Check your inbox.
+            </h1>
+
+            <p class="mt-2.5 text-[13px] leading-5 text-[#9A9DA5]">
+                We sent a 6-digit verification code to
+                <span class="text-[#F4F1EA]">
+                    {{ email }}
+                </span>
+            </p>
+
+        </div>
+
+
+        <!-- OTP Form -->
+        <form [formGroup]="otpForm" (ngSubmit)="verifyOtp()">
+
+            <!-- OTP -->
+            <div>
+
+                <label for="otp" class="sr-only">
+                    Verification code
+                </label>
+
+                <input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+                    formControlName="otp" placeholder="000000" (input)="onOtpInput()"
+                    class="w-full h-14 bg-transparent border-0 border-b border-[#2A2E37] px-0 text-center text-2xl tracking-[0.45em] text-[#F4F1EA] placeholder:text-[#3B3F47] focus:border-[#D9A441] focus:outline-none focus:ring-0 transition-colors"
+                    [class.border-[#C96B6B]]="
+            otpForm.controls.otp.invalid &&
+            otpForm.controls.otp.touched
+          " />
+
+                @if (
+                otpForm.controls.otp.touched &&
+                otpForm.controls.otp.hasError('required')
+                ) {
+                <p class="mt-2 text-[11px] text-[#C96B6B] text-center">
+                    Please enter the verification code.
+                </p>
+                }
+
+                @if (
+                otpForm.controls.otp.touched &&
+                otpForm.controls.otp.hasError('pattern')
+                ) {
+                <p class="mt-2 text-[11px] text-[#C96B6B] text-center">
+                    Enter the 6-digit code sent to your email.
+                </p>
+                }
+
+            </div>
+
+
+            <!-- Error -->
+            @if (errorMessage) {
+
+            <p class="mt-4 text-[11px] text-[#C96B6B] text-center">
+                {{ errorMessage }}
+            </p>
+
+            }
+
+
+            <!-- Success -->
+            @if (successMessage) {
+
+            <p class="mt-4 text-[11px] text-[#7FAF8A] text-center">
+                {{ successMessage }}
+            </p>
+
+            }
+
+
+            <!-- Verify -->
+            <button type="submit" [disabled]="otpForm.invalid || isLoading"
+                class="mt-6 w-full h-11 rounded-lg bg-[#D9A441] text-[13px] font-medium text-[#0F1115] hover:bg-[#F0C674] active:scale-[0.99] transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-35">
+
+                @if (isLoading) {
+                Verifying...
+                } @else {
+                Verify email
+                }
+
+            </button>
+
+        </form>
+
+
+        <!-- Resend -->
+        <div class="mt-6 text-center">
+
+            <p class="text-[11px] text-[#777B84]">
+
+                Didn't receive the code?
+
+                <button type="button" (click)="resendOtp()" [disabled]="isResending"
+                    class="ml-1 text-[#D9A441] hover:text-[#F0C674] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                    @if (isResending) {
+                    Sending...
+                    } @else {
+                    Resend code
+                    }
+                </button>
+
+            </p>
+
+        </div>
+
+
+        <!-- Back -->
+        <div class="mt-5 text-center">
+
+            <button type="button" (click)="goBack()"
+                class="text-[11px] text-[#777B84] hover:text-[#F4F1EA] transition-colors">
+                ← Back to registration
+            </button>
+
+        </div>
+
+
+        <!-- Footer -->
+        <p class="mt-8 text-center text-[9px] tracking-wide text-[#777B84]/50">
+            Your thoughts. Your space.
+        </p>
+
+    </div>
+</div>
