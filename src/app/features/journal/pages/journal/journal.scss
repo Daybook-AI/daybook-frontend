@@ -1,0 +1,52 @@
+:host {
+  display: block;
+  min-height: 100%;
+  background: #0f1115;
+  color: #f4f1ea;
+}
+
+button,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #d9a441;
+  outline-offset: 3px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.journal-home {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+.journal-serif {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.ritual-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid #292b30;
+  background:
+    linear-gradient(90deg, rgb(15 17 21 / 90%) 0%, rgb(15 17 21 / 54%) 70%, rgb(15 17 21 / 35%) 100%),
+    linear-gradient(0deg, #211b15, #44301d 55%, #17191d);
+}
+
+.ritual-card::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: radial-gradient(ellipse at 70% 100%, rgb(217 164 65 / 18%), transparent 55%);
+  content: '';
+}

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
+import { pendingChangesGuard } from './core/guards/pending-changes.guard';
 
 export const routes: Routes = [
     {
@@ -35,9 +36,21 @@ export const routes: Routes = [
     {
         path: 'journal',
         canActivate: [authGuard],
-        loadComponent: () =>
-            import('../app/features/journal/pages/journal')
-                .then(c => c.JournalComponenet)
+        children: [
+            {
+                path: '',
+                loadComponent: () =>
+                    import('../app/features/journal/pages/journal/journal')
+                        .then(c => c.JournalComponenet)
+            },
+            {
+                path: 'write',
+                canDeactivate: [pendingChangesGuard],
+                loadComponent: () =>
+                    import('../app/features/journal/pages/journal-write/journal-write')
+                        .then(c => c.JournalWritePageComponent)
+            }
+        ]
     },
 
     {

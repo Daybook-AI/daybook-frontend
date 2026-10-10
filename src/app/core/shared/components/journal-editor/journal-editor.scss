@@ -1,0 +1,243 @@
+:host {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+.journal-editor {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid #2a2e37;
+    border-radius: 14px;
+    background: #191b20;
+    color: #f4f1ea;
+}
+
+/* Compact formatting toolbar */
+.editor-toolbar {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 9px;
+    border-bottom: 1px solid #2a2e37;
+    background: #191b20;
+}
+
+.editor-toolbar button {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    min-height: 34px;
+    padding: 6px 9px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: #b8bbc3;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition:
+        color 150ms ease,
+        background 150ms ease,
+        border-color 150ms ease;
+}
+
+.editor-toolbar button:hover {
+    background: #292c33;
+    color: #f4f1ea;
+}
+
+.editor-toolbar button.active {
+    border-color: #51432b;
+    background: #3a3020;
+    color: #e8b653;
+}
+
+.editor-toolbar button:focus-visible {
+    outline: 2px solid #d9a441;
+    outline-offset: 2px;
+}
+
+.editor-toolbar button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.separator {
+    flex: 0 0 1px;
+    width: 1px;
+    height: 22px;
+    margin: 0 3px;
+    background: #353841;
+}
+
+/* Writing area takes all remaining space */
+.editor-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 18px 20px;
+    background: #191b20;
+}
+
+.editor-body>div {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* TipTap / ProseMirror writing surface */
+:host ::ng-deep .journal-prose {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: 180px;
+    overflow-y: auto;
+    padding: 0 2px 24px;
+    outline: none;
+    border: 0;
+    background: transparent;
+    color: #e9e5dd;
+    caret-color: #d9a441;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 16px;
+    line-height: 1.9;
+    overflow-wrap: anywhere;
+    scrollbar-color: #393b42 transparent;
+    scrollbar-width: thin;
+}
+
+:host ::ng-deep .journal-prose p {
+    margin: 0 0 16px;
+}
+
+:host ::ng-deep .journal-prose h1,
+:host ::ng-deep .journal-prose h2,
+:host ::ng-deep .journal-prose h3 {
+    margin: 22px 0 12px;
+    color: #f4f1ea;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+:host ::ng-deep .journal-prose h1 {
+    font-size: 28px;
+}
+
+:host ::ng-deep .journal-prose h2 {
+    font-size: 23px;
+}
+
+:host ::ng-deep .journal-prose h3 {
+    font-size: 19px;
+}
+
+:host ::ng-deep .journal-prose ul,
+:host ::ng-deep .journal-prose ol {
+    margin: 12px 0;
+    padding-left: 26px;
+}
+
+:host ::ng-deep .journal-prose ul {
+    list-style: disc;
+}
+
+:host ::ng-deep .journal-prose ol {
+    list-style: decimal;
+}
+
+:host ::ng-deep .journal-prose li {
+    margin: 5px 0;
+    padding-left: 4px;
+}
+
+:host ::ng-deep .journal-prose blockquote {
+    margin: 18px 0;
+    border-left: 2px solid #d9a441;
+    padding: 4px 0 4px 16px;
+    color: #aaa49a;
+    font-style: italic;
+}
+
+:host ::ng-deep .journal-prose strong {
+    color: #f4f1ea;
+}
+
+:host ::ng-deep .journal-prose em {
+    color: #e6d6b7;
+}
+
+:host ::ng-deep .journal-prose s {
+    color: #9a9da5;
+}
+
+/* Avoid a bright browser selection in the dark editor */
+:host ::ng-deep .journal-prose ::selection {
+    background: rgb(217 164 65 / 30%);
+}
+
+/* Smaller phones */
+@media (max-width: 480px) {
+    .journal-editor {
+        border-radius: 11px;
+    }
+
+    .editor-toolbar {
+        gap: 2px;
+        padding: 7px;
+    }
+
+    .editor-toolbar button {
+        min-width: 30px;
+        min-height: 32px;
+        padding: 5px 7px;
+        font-size: 11px;
+    }
+
+    .separator {
+        margin: 0 2px;
+    }
+
+    .editor-body {
+        padding: 15px 13px;
+    }
+
+    :host ::ng-deep .journal-prose {
+        min-height: 140px;
+        font-size: 15px;
+        line-height: 1.85;
+    }
+
+    :host ::ng-deep .journal-prose h1 {
+        font-size: 25px;
+    }
+
+    :host ::ng-deep .journal-prose h2 {
+        font-size: 21px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .editor-toolbar button {
+        transition: none;
+    }
+}

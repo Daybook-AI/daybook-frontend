@@ -1,0 +1,45 @@
+<div
+  class="modal-backdrop"
+  role="presentation"
+  (click)="stay.emit()">
+
+  <section
+    class="confirmation-modal"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="unsaved-title"
+    aria-describedby="unsaved-description"
+    (click)="$event.stopPropagation()">
+
+    <div class="modal-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="1.7">
+        <path d="M12 8v4m0 4h.01"></path>
+        <path d="M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3l-7.5-13.1a2 2 0 0 0-3.4 0Z"></path>
+      </svg>
+    </div>
+
+    <h2 id="unsaved-title">Leave your entry?</h2>
+
+    <p id="unsaved-description">
+      You have unsaved changes in your journal.
+      If you leave now, those changes will be lost.
+    </p>
+
+    <div class="modal-actions">
+      <button
+        type="button"
+        class="keep-button"
+        (click)="stay.emit()">
+        Keep writing
+      </button>
+
+      <button
+        type="button"
+        class="discard-button"
+        (click)="discard.emit()">
+        Discard changes
+      </button>
+    </div>
+  </section>
+</div>

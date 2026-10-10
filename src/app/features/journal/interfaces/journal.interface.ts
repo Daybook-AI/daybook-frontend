@@ -1,7 +1,26 @@
-export interface JournalEntry {
-  id: string | number;
+import { IJournalDocument } from "../../../core/shared/components/journal-editor/journal-editor";
+
+export interface IJournalEntry {
+  id: number;
   content: string;
-  category: 'Personal' | 'Work' | 'Health';
+  category: string;
   dateLabel: string;
-  aiTag?: string;
+  aiTag: string | null;
+}
+
+export interface IJournalPayload {
+  title: string;
+  content: IJournalDocument;
+  mood?: string;
+  tags?: string[];
+}
+
+export interface IJournal {
+  id: number;
+  title: string;
+  content: IJournalDocument;
+  mood: string | null;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
 }

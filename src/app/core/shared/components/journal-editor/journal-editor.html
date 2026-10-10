@@ -1,0 +1,86 @@
+<div class="journal-editor">
+    <div class="editor-toolbar" role="toolbar" aria-label="Journal formatting">
+        <button type="button" [class.active]="isActive('paragraph')" [attr.aria-pressed]="isActive('paragraph')"
+            (click)="setParagraph()" title="Paragraph" aria-label="Paragraph">
+            P
+        </button>
+
+        <button type="button" [class.active]="isActive('heading', { level: 1 })"
+            [attr.aria-pressed]="isActive('heading', { level: 1 })" (click)="setHeading(1)" title="Heading 1"
+            aria-label="Heading 1">
+            H1
+        </button>
+
+        <button type="button" [class.active]="isActive('heading', { level: 2 })"
+            [attr.aria-pressed]="isActive('heading', { level: 2 })" (click)="setHeading(2)" title="Heading 2"
+            aria-label="Heading 2">
+            H2
+        </button>
+
+        <button type="button" [class.active]="isActive('heading', { level: 3 })"
+            [attr.aria-pressed]="isActive('heading', { level: 3 })" (click)="setHeading(3)" title="Heading 3"
+            aria-label="Heading 3">
+            H3
+        </button>
+
+        <span class="separator"></span>
+
+        <button type="button" [class.active]="isActive('bold')" [attr.aria-pressed]="isActive('bold')"
+            (click)="toggleBold()" title="Bold" aria-label="Bold">
+            <strong>B</strong>
+        </button>
+
+        <button type="button" [class.active]="isActive('italic')" [attr.aria-pressed]="isActive('italic')"
+            (click)="toggleItalic()" title="Italic" aria-label="Italic">
+            <em>I</em>
+        </button>
+
+        <button type="button" [class.active]="isActive('strike')" [attr.aria-pressed]="isActive('strike')"
+            (click)="toggleStrike()" title="Strikethrough" aria-label="Strikethrough">
+            <s>S</s>
+        </button>
+
+        <span class="separator"></span>
+
+        <button type="button" [class.active]="isActive('bulletList')" [attr.aria-pressed]="isActive('bulletList')"
+            (click)="toggleBulletList()" title="Bullet list" aria-label="Bullet list">
+            • List
+        </button>
+
+        <button type="button" [class.active]="isActive('orderedList')" [attr.aria-pressed]="isActive('orderedList')"
+            (click)="toggleOrderedList()" title="Numbered list" aria-label="Numbered list">
+            1. List
+        </button>
+
+        <button type="button" (click)="outdentList()" title="Decrease list indentation"
+            aria-label="Decrease list indentation">
+            ←
+        </button>
+
+        <button type="button" (click)="indentList()" title="Increase list indentation"
+            aria-label="Increase list indentation">
+            →
+        </button>
+
+        <span class="separator"></span>
+
+        <button type="button" [class.active]="isActive('blockquote')" [attr.aria-pressed]="isActive('blockquote')"
+            (click)="toggleBlockquote()" title="Blockquote" aria-label="Blockquote">
+            “ ”
+        </button>
+
+        <span class="separator"></span>
+
+        <button type="button" (click)="undo()" [disabled]="!canUndo()" title="Undo" aria-label="Undo">
+            ↶
+        </button>
+
+        <button type="button" (click)="redo()" [disabled]="!canRedo()" title="Redo" aria-label="Redo">
+            ↷
+        </button>
+    </div>
+
+    <div class="editor-body">
+        <div #editorElement></div>
+    </div>
+</div>
