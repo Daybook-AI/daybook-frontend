@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
-import type { IJournalDocument } from '../shared/components/journal-editor/journal-editor';
+import type { IJournalDocument } from '../shared/interfaces/journal-document.interface';
 
 export interface JournalDraftState {
   title: string;

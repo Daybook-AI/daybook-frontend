@@ -17,15 +17,17 @@ import {
   extractJournalText,
 } from '../../../../core/services/journal-draft.service';
 import {
-  IJournalDocument,
   JournalEditorComponent,
-} from '../../../../core/shared/components/journal-editor/journal-editor';
+} from '../../components/journal-editor/journal-editor';
+import { IJournalDocument } from '../../../../core/shared/interfaces/journal-document.interface';
 import { UnsavedChangesModalComponent } from '../../../../core/shared/components/unsaved-changes-modal/unsaved-changes-modal.component';
+import { GoBackComponent } from '../../../../core/shared/components/go-back/go-back';
+import { BottomNavigationComponent } from '../../../../core/shared/components/bottom-navigation/bottom-navigation';
 
 @Component({
   selector: 'app-journal-write-page',
   standalone: true,
-  imports: [JournalEditorComponent, UnsavedChangesModalComponent],
+  imports: [JournalEditorComponent, UnsavedChangesModalComponent, GoBackComponent, BottomNavigationComponent],
   templateUrl: './journal-write.html',
   styleUrl: './journal-write.scss',
 })

@@ -1,30 +1,6 @@
 <div class="journal-home min-h-screen bg-[#0F1115] pb-24 text-[#F4F1EA]">
   <main class="mx-auto w-full max-w-md px-5">
-    <header class="relative flex items-center justify-between py-5">
-      <div class="flex items-center gap-2">
-        <span class="text-lg text-[#D9A441]" aria-hidden="true">◈</span>
-        <h1 class="text-lg font-semibold tracking-tight">Daybook</h1>
-        <span class="rounded bg-[#24252A] px-1.5 py-0.5 text-[9px] text-[#D9A441]">AI</span>
-      </div>
-
-      <button type="button" (click)="toggleProfileMenu()"
-        class="flex h-9 w-9 items-center justify-center rounded-full bg-[#D9A441] text-[#171717]"
-        aria-label="Open profile menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5">
-          <circle cx="12" cy="8" r="3.5"></circle>
-          <path d="M5.5 20a6.5 6.5 0 0 1 13 0"></path>
-        </svg>
-      </button>
-
-      @if (isProfileMenuOpen) {
-      <div class="absolute right-0 top-16 z-40 rounded-xl border border-[#2A2E37] bg-[#1A1C22] p-2 shadow-xl">
-        <button type="button" (click)="logout()" [disabled]="isLoggingOut"
-          class="rounded-lg px-4 py-2 text-sm hover:bg-[#272A31]">
-          {{ isLoggingOut ? 'Logging out...' : 'Log out' }}
-        </button>
-      </div>
-      }
-    </header>
+    <app-daybook-header></app-daybook-header>
 
     <section class="mb-5 mt-2">
       <p class="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#D9A441]">
@@ -93,20 +69,5 @@
     <app-recent-journals (openEditorEvent)="openEditor()" [isLoading]=isLoadingEntries></app-recent-journals>
   </main>
 
-  <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-[#252830] bg-[#101115]/95 backdrop-blur-md"> 
-    <div class="mx-auto grid max-w-md grid-cols-3 px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-3">
-      <button type="button" (click)="navigateTo('journal')" class="flex flex-col items-center gap-1 text-[#D9A441]">
-        <span class="text-lg">☷</span>
-        <span class="text-[10px] font-medium">Journal</span>
-      </button>
-      <button type="button" (click)="navigateTo('chat')" class="flex flex-col items-center gap-1 text-[#858994]">
-        <span class="text-lg">▢</span>
-        <span class="text-[10px]">Chat</span>
-      </button>
-      <button type="button" (click)="navigateTo('insights')" class="flex flex-col items-center gap-1 text-[#858994]">
-        <span class="text-lg">✧</span>
-        <span class="text-[10px]">Insights</span>
-      </button>
-    </div>
-  </nav>
-</div>
+  <app-bottom-navigation></app-bottom-navigation>
+</div> 

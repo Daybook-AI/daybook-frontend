@@ -1,4 +1,5 @@
-import { IJournalDocument } from "../../../core/shared/components/journal-editor/journal-editor";
+import { IJournalDocument } from "../../../core/shared/interfaces/journal-document.interface";
+import { IPaginationQuery } from "../../../core/shared/interfaces/pagination";
 
 export interface IJournalEntry {
   id: number;
@@ -23,4 +24,33 @@ export interface IJournal {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface IJournalViewEntry {
+  id: number;
+  title: string;
+  preview: string;
+  time: string;
+  mood: string;
+  tags: string[];
+  dateGroup: string;
+}
+
+export interface IJournalGroup {
+  label: string;
+  entries: IJournalViewEntry[];
+}
+
+export interface IJournalFilter {
+  search?: string;
+  mood?: string;
+  tag?: string;
+  from?: string;
+  to?: string;
+  sort?: 'asc' | 'desc';
+}
+
+export interface IJournalQuery {
+  pagination: IPaginationQuery;
+  filters: IJournalFilter;
 }

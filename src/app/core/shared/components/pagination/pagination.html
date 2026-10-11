@@ -1,0 +1,33 @@
+<footer class="mt-2 border-t border-[#252830] pt-4">
+    <div class="flex items-center justify-between gap-3">
+        <span class="text-[10px] text-[#9A9DA5]">
+            Showing {{ showingFrom }}–{{ showingTo }}
+            of {{ totalItems }}
+        </span>
+
+        <div class="flex shrink-0 items-center gap-2">
+            <!-- Previous -->
+            <button type="button" (click)="previousPage.emit()" [disabled]="currentPage <= 1" class="flex h-8 w-8 items-center justify-center rounded-full
+                       border transition-colors
+                       disabled:cursor-not-allowed" [ngClass]="currentPage <= 1
+                    ? 'border-[#252830] text-[#555963] bg-transparent'
+                    : 'border-[#2A2E37] text-[#F4F1EA] hover:bg-[#252830]'" aria-label="Previous page">
+                ‹
+            </button>
+
+            <!-- Page indicator -->
+            <span class="whitespace-nowrap text-[10px] text-[#F4F1EA]">
+                {{ currentPage }} / {{ totalPages }}
+            </span>
+
+            <!-- Next -->
+            <button type="button" (click)="nextPage.emit()" [disabled]="currentPage >= totalPages || totalPages === 0"
+                class="flex h-8 w-8 items-center justify-center rounded-full
+                       transition-colors disabled:cursor-not-allowed" [ngClass]="currentPage >= totalPages || totalPages === 0
+                    ? 'bg-[#252830] text-[#555963]'
+                    : 'bg-[#D9A441] text-[#191B20] hover:bg-[#E7B653]'" aria-label="Next page">
+                ›
+            </button>
+        </div>
+    </div>
+</footer>

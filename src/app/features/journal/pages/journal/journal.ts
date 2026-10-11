@@ -11,28 +11,26 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, finalize, takeUntil, tap } from 'rxjs';
 
-import { AuthService } from '../../../../core/services/auth.service';
 import {
   JournalDraftService,
   countJournalCharacters,
   createJournalDocumentFromText,
   extractJournalText,
 } from '../../../../core/services/journal-draft.service';
-import { IJournalDocument } from '../../../../core/shared/components/journal-editor/journal-editor';
+import { IJournalDocument } from '../../../../core/shared/interfaces/journal-document.interface';
+import { DaybookHeaderComponent } from '../../../../core/shared/components/daybook-header/daybook-header';
 import { JournalService } from '../../../../core/services/journal.service';
-import { IJournalEntry } from '../../interfaces/journal.interface';
+import { BottomNavigationComponent } from '../../../../core/shared/components/bottom-navigation/bottom-navigation';
 import { RecentsJournalComponent } from '../../components/recents/recents';
 
 @Component({
   selector: 'app-journal',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RecentsJournalComponent],
+  imports: [CommonModule, FormsModule, RecentsJournalComponent, DaybookHeaderComponent, BottomNavigationComponent],
   templateUrl: './journal.html',
   styleUrl: './journal.scss',
 })
 export class JournalComponenet implements OnInit, OnDestroy {
   private readonly _router = inject(Router);
-  private readonly _authService = inject(AuthService);
   private readonly _journalService = inject(JournalService);
   private readonly _draftService = inject(JournalDraftService);
   private readonly _destroy$ = new Subject<void>();
@@ -49,8 +47,6 @@ export class JournalComponenet implements OnInit, OnDestroy {
 
   isSaving = false;
   isLoadingEntries = false;
-  isProfileMenuOpen = false;
-  isLoggingOut = false
   isDirty = false;
 
   saveError = '';
@@ -92,7 +88,6 @@ export class JournalComponenet implements OnInit, OnDestroy {
 
   openEditor(): void {
     this.persistDraft();
-    this.isProfileMenuOpen = false;
     this.saveError = '';
     this._router.navigate(['/journal/write']);
   }
@@ -181,62 +176,11 @@ export class JournalComponenet implements OnInit, OnDestroy {
   // Dashboard actions
   // -----------------------------
 
-  toggleProfileMenu(): void {
-    this.isProfileMenuOpen = !this.isProfileMenuOpen;
-  }
-
-
-
-  navigateTo(page: 'journal' | 'chat' | 'insights'): void {
-    const routes = {
-      journal: '/journal',
-      chat: '/chat',
-      insights: '/insights',
-    };
-
-    this._router.navigate([routes[page]]);
-  }
-
   // -----------------------------
   // Helpers
   // -----------------------------
 
 
-
-  // -----------------------------
-  // Authentication
-  // -----------------------------
-
-  logout(): void {
-    if (this.isLoggingOut) {
-      return;
-    }
-
-    this.isLoggingOut = true;
-    this.isProfileMenuOpen = false;
-
-    this._authService.logout()
-      .pipe(
-        takeUntil(this._destroy$),
-        finalize(() => {
-          this.isLoggingOut = false;
-        }),
-      )
-      .subscribe({
-        next: () => {
-          this._router.navigate(['/auth/login'], {
-            replaceUrl: true,
-          });
-        },
-        error: () => {
-          this._authService.clearSession();
-
-          this._router.navigate(['/auth/login'], {
-            replaceUrl: true,
-          });
-        },
-      });
-  }
 
   ngOnDestroy(): void {
     this._destroy$.next();

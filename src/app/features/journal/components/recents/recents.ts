@@ -39,8 +39,7 @@ export class RecentsJournalComponent implements OnInit {
   }
 
   viewAllEntries(): void {
-    console.log(this.entries)
-    // this._router.navigate(['/journal']);
+    this._router.navigate(['journal/list']);
   }
 
   loadEntries(): void {

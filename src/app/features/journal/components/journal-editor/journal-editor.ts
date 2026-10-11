@@ -15,10 +15,7 @@ import {
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
-export type IJournalDocument = {
-  type: 'doc';
-  content: Record<string, unknown>[];
-};
+import { IJournalDocument } from '../../../../core/shared/interfaces/journal-document.interface';
 
 const EMPTY_DOCUMENT: IJournalDocument = {
   type: 'doc',
