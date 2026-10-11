@@ -4,11 +4,12 @@ import {
   inject,
   OnDestroy,
   OnInit,
+  ViewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, finalize, takeUntil } from 'rxjs';
+import { Subject, finalize, takeUntil, tap } from 'rxjs';
 
 import { AuthService } from '../../../../core/services/auth.service';
 import {
@@ -20,11 +21,12 @@ import {
 import { IJournalDocument } from '../../../../core/shared/components/journal-editor/journal-editor';
 import { JournalService } from '../../../../core/services/journal.service';
 import { IJournalEntry } from '../../interfaces/journal.interface';
+import { RecentsJournalComponent } from '../../components/recents/recents';
 
 @Component({
   selector: 'app-journal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RecentsJournalComponent],
   templateUrl: './journal.html',
   styleUrl: './journal.scss',
 })
@@ -34,6 +36,9 @@ export class JournalComponenet implements OnInit, OnDestroy {
   private readonly _journalService = inject(JournalService);
   private readonly _draftService = inject(JournalDraftService);
   private readonly _destroy$ = new Subject<void>();
+
+  @ViewChild(RecentsJournalComponent)
+  readonly recentComponent!: RecentsJournalComponent;
 
   journalTitle = '';
   journalContent: IJournalDocument = {
@@ -45,11 +50,10 @@ export class JournalComponenet implements OnInit, OnDestroy {
   isSaving = false;
   isLoadingEntries = false;
   isProfileMenuOpen = false;
-  isLoggingOut = false;
+  isLoggingOut = false
   isDirty = false;
 
   saveError = '';
-  entries: IJournalEntry[] = [];
 
   reflectionPrompt = 'What has been taking up most of your mind lately?';
 
@@ -72,8 +76,6 @@ export class JournalComponenet implements OnInit, OnDestroy {
         this.journalContent = draftState.content;
         this.quickComposerText = extractJournalText(draftState.content);
       });
-
-    this.loadEntries();
   }
 
   get hasDraftContent(): boolean {
@@ -129,7 +131,8 @@ export class JournalComponenet implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.resetDraft();
-          this.loadEntries();
+          this.recentComponent.loadEntries();
+          this.scrollToRecentJournals();
         },
         error: () => {
           this.saveError = 'Unable to save your journal. Please try again.';
@@ -146,35 +149,18 @@ export class JournalComponenet implements OnInit, OnDestroy {
     this.openEditor();
   }
 
+  scrollToRecentJournals(): void {
+    this.recentComponent.hostElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }
+
   // -----------------------------
   // Journal API
   // -----------------------------
 
-  loadEntries(): void {
-    this.isLoadingEntries = true;
 
-    this._journalService.findAll()
-      .pipe(
-        takeUntil(this._destroy$),
-        finalize(() => {
-          this.isLoadingEntries = false;
-        }),
-      )
-      .subscribe({
-        next: (journals) => {
-          this.entries = journals.map((journal) => ({
-            id: journal.id,
-            content: extractJournalText(journal.content),
-            category: journal.tags?.[0] ?? 'Personal',
-            dateLabel: this.formatDate(journal.createdAt),
-            aiTag: null,
-          }));
-        },
-        error: () => {
-          // Do not erase existing entries if a refresh fails.
-        },
-      });
-  }
 
   private resetDraft(): void {
     this.journalTitle = '';
@@ -199,13 +185,7 @@ export class JournalComponenet implements OnInit, OnDestroy {
     this.isProfileMenuOpen = !this.isProfileMenuOpen;
   }
 
-  viewAllEntries(): void {
-    this._router.navigate(['/journal']);
-  }
 
-  openEntry(id: string | number): void {
-    this._router.navigate(['/journal', id]);
-  }
 
   navigateTo(page: 'journal' | 'chat' | 'insights'): void {
     const routes = {
@@ -221,14 +201,7 @@ export class JournalComponenet implements OnInit, OnDestroy {
   // Helpers
   // -----------------------------
 
-  private formatDate(value: string): string {
-    return new Date(value).toLocaleString([], {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  }
+
 
   // -----------------------------
   // Authentication

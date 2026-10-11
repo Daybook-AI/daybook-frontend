@@ -4,22 +4,24 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import type { IJournal, IJournalPayload } from '../../features/journal/interfaces/journal.interface';
+import { AppConstants } from '../constants/app.constants';
+import { IApiResponse } from '../../features/auth/interfaces/auth.interface';
 
 
 @Injectable({ providedIn: 'root' })
 export class JournalService {
     private readonly http = inject(HttpClient);
-    private readonly api = '/api/journals';
+    private readonly api = `${AppConstants.domain}/journal`;
 
-    create(payload: IJournalPayload): Observable<IJournal> {
-        return this.http.post<IJournal>(
+    create(payload: IJournalPayload): Observable<IApiResponse<IJournal>> {
+        return this.http.post<IApiResponse<IJournal>>(
             this.api,
             payload,
         );
     }
 
-    findAll(): Observable<IJournal[]> {
-        return this.http.get<IJournal[]>(
+    findAll(): Observable<IApiResponse<IJournal[]>> {
+        return this.http.get<IApiResponse<IJournal[]>>(
             this.api,
         );
     }
