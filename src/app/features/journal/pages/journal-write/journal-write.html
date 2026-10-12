@@ -1,0 +1,86 @@
+<div class="journal-write-page">
+  <header class="writing-header">
+    <app-go-back (backClick)="backToJournal()"></app-go-back>
+
+    <div class="header-copy">
+      <p class="eyebrow">DAYBOOK · JOURNAL</p>
+      <h1>{{ journalTitle || 'New entry' }}</h1>
+    </div>
+
+    <div class="header-meta">
+      <span class="draft-status" aria-live="polite">
+        <span class="status-dot"></span>
+        {{ isSaving ? 'Saving' : isDirty ? 'Unsaved changes' : journalId === null ? 'Saved draft' : 'Saved' }}
+      </span>
+
+      <div class="menu-wrap">
+        <button type="button" class="editor-icon-button" (click)="toggleMenu()" aria-label="Open entry actions"
+          aria-haspopup="menu" [attr.aria-expanded]="menuOpen">
+          <svg viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5" aria-hidden="true">
+            <circle cx="12" cy="5" r="1.9"></circle>
+            <circle cx="12" cy="12" r="1.9"></circle>
+            <circle cx="12" cy="19" r="1.9"></circle>
+          </svg>
+        </button>
+
+        @if (menuOpen) {
+        <div class="menu-panel" role="menu" aria-label="Entry actions">
+          @if (journalMode === 'create') {
+          <button type="button" role="menuitem" (click)="saveDraft()">Save draft</button>
+          }
+          <button type="button" role="menuitem" (click)="clearFormatting()">Clear formatting</button>
+          @if (journalMode === 'create') {
+          <button type="button" role="menuitem" (click)="discardDraft()">Discard draft</button>
+          }
+        </div>
+        }
+      </div>
+    </div>
+  </header>
+
+  <main class="writing-surface">
+    @if (isLoadingEntry) {
+    <p class="status-copy" role="status">Loading journal entry...</p>
+    } @else if (loadError) {
+    <p class="error-text" role="alert">{{ loadError }}</p>
+    } @else if (isJournalReady) {
+    <div class="title-row">
+      <input type="text" class="title-input" [value]="journalTitle" (input)="onTitleInput($event)"
+        placeholder="Give this entry a title..." aria-label="Journal entry title" />
+      <div class="title-meta">
+        <span>{{ todayLabel }}</span>
+        <span>·</span>
+        <span>{{ characterCount }} characters</span>
+      </div>
+    </div>
+
+    <div class="editor-shell">
+      <app-journal-editor [initialContent]="editorContent" [editable]="true"
+        (contentChange)="onJournalContentChange($event)"></app-journal-editor>
+    </div>
+
+    <footer class="actions-bar">
+      @if (saveError) {
+      <p class="error-text" role="alert">{{ saveError }}</p>
+      } @else {
+      <div class="status-copy">
+        <span class="status-icon">♙</span>
+        <span>Private &amp; encrypted</span>
+      </div>
+      }
+
+      <button type="button" class="save-button" (click)="saveEntry()"
+        [disabled]="!canSaveEntry">
+        {{ isSaving ? 'Saving...' : journalMode === 'create' ? 'Save entry' : 'Save changes' }}
+      </button>
+    </footer>
+    }
+  </main>
+</div>
+
+<app-bottom-navigation></app-bottom-navigation>
+
+@if (showUnsavedChangesModal) {
+<app-unsaved-changes-modal (stay)="keepWriting()" (discard)="discardChanges()">
+</app-unsaved-changes-modal>
+}

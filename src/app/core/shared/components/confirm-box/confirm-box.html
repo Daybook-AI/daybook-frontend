@@ -1,0 +1,50 @@
+<div
+    class="confirm-overlay"
+    (click)="onCancel()"
+>
+    <section
+        class="confirm-box"
+        [class.danger]="variant === 'danger'"
+        [class.warning]="variant === 'warning'"
+        [class.info]="variant === 'info'"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
+        aria-describedby="confirm-message"
+        (click)="$event.stopPropagation()"
+    >
+        <div class="confirm-icon" aria-hidden="true">
+            @if (variant === 'danger') {
+                <span>!</span>
+            } @else if (variant === 'warning') {
+                <span>?</span>
+            } @else {
+                <span>i</span>
+            }
+        </div>
+
+        <h2 id="confirm-title">{{ title }}</h2>
+
+        <p id="confirm-message">{{ message }}</p>
+
+        <div class="confirm-actions">
+            <button
+                type="button"
+                class="cancel-button"
+                [disabled]="isLoading"
+                (click)="onCancel()"
+            >
+                {{ cancelText }}
+            </button>
+
+            <button
+                type="button"
+                class="confirm-button"
+                [disabled]="isLoading"
+                (click)="onConfirm()"
+            >
+                {{ isLoading ? 'Please wait...' : confirmText }}
+            </button>
+        </div>
+    </section>
+</div>

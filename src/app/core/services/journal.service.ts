@@ -1,0 +1,63 @@
+
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+import type { IJournal, IJournalPayload, IJournalQuery } from '../../features/journal/interfaces/journal.interface';
+import { AppConstants } from '../constants/app.constants';
+import { IApiResponse } from '../../features/auth/interfaces/auth.interface';
+
+
+@Injectable({ providedIn: 'root' })
+export class JournalService {
+    private readonly http = inject(HttpClient);
+    private readonly api = `${AppConstants.domain}/journal`;
+
+    create(payload: IJournalPayload): Observable<IApiResponse<IJournal>> {
+        return this.http.post<IApiResponse<IJournal>>(
+            this.api,
+            payload,
+        );
+    }
+
+    findAll(query?: IJournalQuery): Observable<IApiResponse<IJournal[]>> {
+        let params = new HttpParams();
+
+        if (query) {
+            const queryParams = {
+                ...query?.pagination,
+                ...query?.filters,
+            };
+
+            for (const [key, value] of Object.entries(queryParams)) {
+                if (value !== undefined && value !== null && value !== '') {
+                    params = params.set(key, value);
+                }
+            }
+        }
+
+        return this.http.get<IApiResponse<IJournal[]>>(
+            this.api,
+            { params },
+        );
+    }
+
+    findOne(id: number): Observable<IApiResponse<IJournal>> {
+        return this.http.get<IApiResponse<IJournal>>(
+            `${this.api}/${id}`,
+        );
+    }
+
+    update(id: number, payload: IJournalPayload): Observable<IApiResponse<IJournal>> {
+        return this.http.put<IApiResponse<IJournal>>(
+            `${this.api}/${id}`,
+            payload,
+        );
+    }
+
+    remove(id: number): Observable<IApiResponse<string>> {
+        return this.http.patch<IApiResponse<string>>(
+            `${this.api}/${id}`,{}
+        );
+    }
+}
