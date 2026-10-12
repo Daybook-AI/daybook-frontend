@@ -3,7 +3,15 @@ import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, expand, finalize, tap, toArray } from 'rxjs';
+import {
+  EMPTY,
+  expand,
+  finalize,
+  Subject,
+  switchMap,
+  tap,
+  toArray,
+} from 'rxjs';
 
 import { DaybookHeaderComponent } from '../../../../core/shared/components/daybook-header/daybook-header';
 import { BottomNavigationComponent } from '../../../../core/shared/components/bottom-navigation/bottom-navigation';
@@ -18,6 +26,7 @@ import { extractJournalText } from '../../../../core/services/journal-draft.serv
 import { GoBackComponent } from '../../../../core/shared/components/go-back/go-back';
 import { IJournalDocument } from '../../../../core/shared/interfaces/journal-document.interface';
 import { Router } from '@angular/router';
+import { DebounceService } from '../../../../core/services/debounce.service';
 
 interface IJournalListEntry extends IJournalViewEntry {
   createdAt: Date;
@@ -41,6 +50,7 @@ export class AllJournalsComponent implements OnInit {
   private readonly _journalService = inject(JournalService);
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _router = inject(Router);
+  private readonly _debounceService = inject(DebounceService);
 
   searchQuery = '';
   selectedMood = 'All';
@@ -63,86 +73,94 @@ export class AllJournalsComponent implements OnInit {
   totalEntries = 0;
 
   journalGroups: IJournalGroup[] = [];
-
-  private _allEntries: IJournalListEntry[] = [];
+  allEntries: IJournalListEntry[] = [];
+  private readonly _searchSubject = new Subject<string>();
+  private readonly _loadEntriesSubject = new Subject<void>();
 
   ngOnInit(): void {
+    this._debounceService
+      .debounce(this._searchSubject, 400)
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe((query) => {
+        this.searchQuery = query;
+        this.currentPage = 1;
+        this.loadEntries();
+      });
+
+    this._loadEntriesSubject
+      .pipe(
+        switchMap(() => {
+          this.isLoading = true;
+
+          const requestLimit = this.pageSize;
+          const filters = {
+            search: this.searchQuery.trim(),
+            mood: this.selectedMood,
+            tag: this.selectedTag,
+            from: this.appliedDateFrom,
+            to: this.appliedDateTo,
+            sort: this.selectedSort,
+          };
+
+          let requestedPage = 1;
+          const loadPage = (page: number) =>
+            this._journalService.findAll({
+              filters,
+              pagination: {
+                limit: requestLimit,
+                page,
+              },
+            });
+
+          return loadPage(requestedPage).pipe(
+            expand((response) =>
+              response.data.length === requestLimit
+                ? loadPage(++requestedPage)
+                : EMPTY,
+            ),
+            toArray(),
+            tap((responses) => {
+              const journals = responses.flatMap((response) => response.data);
+
+              this.allEntries = journals.map((journal) =>
+                this._mapJournalToEntry(journal),
+              );
+              this.journalGroups = this._mapJournalsToGroups(journals);
+              this.totalEntries = journals.length;
+              this._normalizeCurrentPage();
+            }),
+            finalize(() => {
+              this.isLoading = false;
+            }),
+          );
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+
     this.loadEntries();
   }
 
   // All available tags, derived from the loaded journal entries.
   get availableTags(): string[] {
-    const tags = this._allEntries.flatMap((entry) =>
+    const tags = this.allEntries.flatMap((entry) =>
       entry.tags.map((tag) => tag.replace(/^#/, '')),
     );
 
     return ['All', ...new Set(tags).values()];
   }
 
-  // Apply all filters and sorting before pagination.
-  get filteredEntries(): IJournalListEntry[] {
-    const query = this.searchQuery.trim().toLowerCase();
-
-    const fromDate = this.appliedDateFrom
-      ? new Date(`${this.appliedDateFrom}T00:00:00`).getTime()
-      : null;
-
-    const toDate = this.appliedDateTo
-      ? new Date(`${this.appliedDateTo}T23:59:59.999`).getTime()
-      : null;
-
-    return this._allEntries
-      .filter((entry) => {
-        const matchesSearch =
-          !query ||
-          entry.title.toLowerCase().includes(query) ||
-          entry.preview.toLowerCase().includes(query) ||
-          entry.tags.some((tag) =>
-            tag.toLowerCase().includes(query),
-          );
-
-        const matchesMood =
-          this.selectedMood === 'All' ||
-          entry.mood === this.selectedMood;
-
-        const matchesTag =
-          this.selectedTag === 'All' ||
-          entry.tags.some(
-            (tag) => tag.replace(/^#/, '') === this.selectedTag,
-          );
-
-        const matchesFrom =
-          fromDate === null || entry.timestamp >= fromDate;
-
-        const matchesTo =
-          toDate === null || entry.timestamp <= toDate;
-
-        return (
-          matchesSearch &&
-          matchesMood &&
-          matchesTag &&
-          matchesFrom &&
-          matchesTo
-        );
-      })
-      .sort((a, b) =>
-        this.selectedSort === 'desc'
-          ? b.timestamp - a.timestamp
-          : a.timestamp - b.timestamp,
-      );
-  }
-
   get totalPages(): number {
     return Math.max(
       1,
-      Math.ceil(this.filteredEntries.length / this.pageSize),
+      Math.ceil(this.allEntries.length / this.pageSize),
     );
   }
 
   get paginatedEntries(): IJournalListEntry[] {
     const start = (this.currentPage - 1) * this.pageSize;
 
-    return this.filteredEntries.slice(start, start + this.pageSize);
+    return this.allEntries.slice(start, start + this.pageSize);
   }
 
   // Rebuild date groups from the currently visible page.
@@ -176,7 +194,7 @@ export class AllJournalsComponent implements OnInit {
   }
 
   get showingFrom(): number {
-    return this.filteredEntries.length === 0
+    return this.allEntries.length === 0
       ? 0
       : (this.currentPage - 1) * this.pageSize + 1;
   }
@@ -184,8 +202,19 @@ export class AllJournalsComponent implements OnInit {
   get showingTo(): number {
     return Math.min(
       this.currentPage * this.pageSize,
-      this.filteredEntries.length,
+      this.allEntries.length,
     );
+  }
+
+  onSearchChange(value: string): void {
+    this._searchSubject.next(value.trim());
+  }
+
+  clearSearch(): void {
+    this.searchQuery = '';
+    this.currentPage = 1;
+    this._searchSubject.next('');
+    this.loadEntries();
   }
 
   openEntry(entry: IJournalViewEntry): void {
@@ -209,50 +238,12 @@ export class AllJournalsComponent implements OnInit {
   }
 
   loadEntries(): void {
-    this.isLoading = true;
-
-    const requestLimit = this.pageSize;
-    let requestedPage = 1;
-    const loadPage = (page: number) =>
-      this._journalService.findAll({
-        filters: {},
-        pagination: {
-          limit: requestLimit,
-          page,
-        },
-      });
-
-    loadPage(requestedPage)
-      .pipe(
-        expand((response) =>
-          response.data.length === requestLimit
-            ? loadPage(++requestedPage)
-            : EMPTY,
-        ),
-        toArray(),
-        takeUntilDestroyed(this._destroyRef),
-        finalize(() => {
-          this.isLoading = false;
-        }),
-        tap((responses) => {
-          const journals = responses.flatMap((response) => response.data);
-
-          this._allEntries = journals.map((journal) =>
-            this._mapJournalToEntry(journal),
-          );
-
-          this.journalGroups = this._mapJournalsToGroups(journals);
-          this.totalEntries = journals.length;
-
-          // Keep pagination valid if the loaded dataset changes.
-          this._normalizeCurrentPage();
-        }),
-      )
-      .subscribe();
+    this._loadEntriesSubject.next();
   }
 
   onFiltersChanged(): void {
     this.currentPage = 1;
+    this.loadEntries();
   }
 
   applyDateFilter(): void {
@@ -269,6 +260,7 @@ export class AllJournalsComponent implements OnInit {
 
     this.currentPage = 1;
     this.showDateFilter = false;
+    this.loadEntries();
   }
 
   clearDateFilter(): void {
@@ -279,12 +271,14 @@ export class AllJournalsComponent implements OnInit {
 
     this.currentPage = 1;
     this.showDateFilter = false;
+    this.loadEntries();
   }
 
   selectTag(tag: string): void {
     this.selectedTag = tag;
     this.showTagFilter = false;
     this.currentPage = 1;
+    this.loadEntries();
   }
 
   toggleSort(): void {
@@ -294,6 +288,7 @@ export class AllJournalsComponent implements OnInit {
         : 'desc';
 
     this.currentPage = 1;
+    this.loadEntries();
   }
 
   clearFilters(): void {
@@ -311,6 +306,8 @@ export class AllJournalsComponent implements OnInit {
     this.currentPage = 1;
     this.showDateFilter = false;
     this.showTagFilter = false;
+    this._searchSubject.next('');
+    this.loadEntries();
   }
 
   previousPage(): void {

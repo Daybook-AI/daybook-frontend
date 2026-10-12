@@ -22,11 +22,6 @@
                     </p>
                 </div>
 
-                <!-- <button type="button" aria-label="Create journal entry" (click)="createEntry()" class="flex h-9 w-9 shrink-0 items-center justify-center
-                 rounded-full bg-[#D9A441] text-xl text-[#191B20]
-                 transition-opacity hover:opacity-90">
-                    +
-                </button> -->
             </div>
         </header>
 
@@ -40,12 +35,12 @@
                     <path d="m16 16 4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
                 </svg>
 
-                <input [(ngModel)]="searchQuery" (ngModelChange)="onFiltersChanged()" type="search"
+                <input [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange($event)" type="search"
                     placeholder="Search your entries..." aria-label="Search journal entries" class="w-full bg-transparent text-xs text-[#F4F1EA]
                  outline-none placeholder:text-[#777B85]" />
 
                 @if (searchQuery) {
-                <button type="button" aria-label="Clear search" (click)="searchQuery = ''; onFiltersChanged()"
+                <button type="button" aria-label="Clear search" (click)="clearSearch()"
                     class="text-sm text-[#9A9DA5] hover:text-[#F4F1EA]">
                     ×
                 </button>
@@ -211,13 +206,13 @@
                    border-2 border-[#2A2E37] border-t-[#D9A441]"></div>
                 <p class="text-xs text-[#9A9DA5]">Loading your journal...</p>
             </div>
-            } @else if (filteredEntries.length > 0) {
+            } @else if (allEntries.length > 0) {
 
             <!-- Results summary -->
             <div class="mb-4 flex items-center justify-between">
                 <p class="text-[10px] text-[#9A9DA5]">
-                    {{ filteredEntries.length }}
-                    {{ filteredEntries.length === 1 ? 'entry' : 'entries' }} found
+                    {{ allEntries.length }}
+                    {{ allEntries.length === 1 ? 'entry' : 'entries' }} found
                 </p>
 
                 @if (hasActiveFilters) {
@@ -332,9 +327,9 @@
         </main>
 
         <!-- Pagination -->
-        @if (!isLoading && filteredEntries.length > 0) {
+        @if (!isLoading && allEntries.length > 0) {
         <app-pagination [currentPage]="currentPage" [totalPages]="totalPages" [showingFrom]="showingFrom"
-            [showingTo]="showingTo" [totalItems]="filteredEntries.length" (previousPage)="previousPage()"
+            [showingTo]="showingTo" [totalItems]="allEntries.length" (previousPage)="previousPage()"
             (nextPage)="nextPage()">
         </app-pagination>
         }
