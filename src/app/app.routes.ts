@@ -55,6 +55,13 @@ export const routes: Routes = [
                 loadComponent: () =>
                     import('../app/features/journal/pages/all-journals/all-journals')
                         .then(c => c.AllJournalsComponent)
+            },
+            {
+                path: ':id',
+                canDeactivate: [pendingChangesGuard],
+                loadComponent: () =>
+                    import('../app/features/journal/pages/journal-write/journal-write')
+                        .then(c => c.JournalWritePageComponent)
             }
         ] 
     },

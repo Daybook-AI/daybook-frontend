@@ -51,6 +51,6 @@ export interface IJournalFilter {
 }
 
 export interface IJournalQuery {
-  pagination: IPaginationQuery;
-  filters: IJournalFilter;
+  pagination?: IPaginationQuery;
+  filters?: IJournalFilter;
 }

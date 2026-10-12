@@ -1,18 +1,25 @@
 import {
   Component,
+  DestroyRef,
   HostListener,
-  OnDestroy,
   OnInit,
   ViewChild,
   inject,
 } from '@angular/core';
-import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+  catchError,
+  distinctUntilChanged,
+  map,
+  of,
+  switchMap,
+} from 'rxjs';
 
 import { PendingChangesComponent } from '../../../../core/guards/pending-changes.guard';
 import { JournalService } from '../../../../core/services/journal.service';
 import {
   JournalDraftService,
+  EMPTY_JOURNAL_DOCUMENT,
   countJournalCharacters,
   extractJournalText,
 } from '../../../../core/services/journal-draft.service';
@@ -23,6 +30,9 @@ import { IJournalDocument } from '../../../../core/shared/interfaces/journal-doc
 import { UnsavedChangesModalComponent } from '../../../../core/shared/components/unsaved-changes-modal/unsaved-changes-modal.component';
 import { GoBackComponent } from '../../../../core/shared/components/go-back/go-back';
 import { BottomNavigationComponent } from '../../../../core/shared/components/bottom-navigation/bottom-navigation';
+import { Location } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+type JournalMode = 'create' | 'edit';
 
 @Component({
   selector: 'app-journal-write-page',
@@ -31,44 +41,125 @@ import { BottomNavigationComponent } from '../../../../core/shared/components/bo
   templateUrl: './journal-write.html',
   styleUrl: './journal-write.scss',
 })
-export class JournalWritePageComponent implements OnInit, OnDestroy, PendingChangesComponent {
-  private readonly router = inject(Router);
-  private readonly journalService = inject(JournalService);
-  private readonly draftService = inject(JournalDraftService);
-  private readonly destroy$ = new Subject<void>();
+export class JournalWritePageComponent implements OnInit, PendingChangesComponent {
+  private readonly _router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly _journalService = inject(JournalService);
+  private readonly _draftService = inject(JournalDraftService);
+  private readonly _destroyRef = inject(DestroyRef);
+  private readonly _location = inject(Location)
 
   @ViewChild(JournalEditorComponent)
   editorComponent?: JournalEditorComponent;
 
   journalTitle = '';
-  journalContent: IJournalDocument = {
-    type: 'doc',
-    content: [{ type: 'paragraph' }],
-  };
+  journalId: number | null = null;
+  journalMood: string | undefined;
+  journalTags: string[] | undefined;
+  journalContent: IJournalDocument | null = EMPTY_JOURNAL_DOCUMENT;
   saveError = '';
   isSaving = false;
+  isLoadingEntry = false;
+  loadError = '';
   menuOpen = false;
   isDirty = false;
   showUnsavedChangesModal = false;
   pendingNavigationUrl: string | null = null;
   allowDeactivate = false;
-
   readonly todayLabel = new Date().toLocaleDateString([], {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
 
-  ngOnInit(): void {
-    const draft = this.draftService.snapshot;
-    this.journalTitle = draft.title;
-    this.journalContent = draft.content;
+  journalMode: JournalMode = 'create';
 
-    this.draftService.draft$
-      .pipe(takeUntil(this.destroy$))
+  ngOnInit(): void {
+    this._draftService.draft$
+      .pipe(takeUntilDestroyed(this._destroyRef))
       .subscribe((draftState) => {
-        this.journalTitle = draftState.title;
-        this.journalContent = draftState.content;
+        if (this.journalMode === 'create') {
+          this.journalTitle = draftState.title ?? '';
+          this.journalContent = draftState.content;
+        }
+      });
+
+    this.route.paramMap
+      .pipe(
+        map((params) => params.get('id')),
+        distinctUntilChanged(),
+        switchMap((routeId) => {
+          this.saveError = '';
+          this.loadError = '';
+          this.isDirty = false;
+          this.menuOpen = false;
+
+          if (routeId === null) {
+            return of({ kind: 'create' as const });
+          }
+
+          this.journalId = null;
+          this.journalMode = 'edit';
+          this.journalTitle = '';
+          this.journalContent = null;
+          this.journalMood = undefined;
+          this.journalTags = undefined;
+
+          const parsedId = Number(routeId);
+          if (!Number.isInteger(parsedId) || parsedId <= 0) {
+            return of({ kind: 'invalid' as const });
+          }
+
+          this.journalId = parsedId;
+          this.isLoadingEntry = true;
+
+          return this._journalService.findOne(parsedId).pipe(
+            map(({ data: journal }) => ({
+              kind: 'loaded' as const,
+              id: parsedId,
+              journal,
+            })),
+            catchError(() => of({ kind: 'error' as const, id: parsedId })),
+          );
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe((result) => {
+        this.isLoadingEntry = false;
+
+        if (result.kind === 'create') {
+          this.journalId = null;
+          this.journalMode = 'create';
+          const draft = this._draftService.snapshot;
+          this.journalTitle = draft.title ?? '';
+          this.journalContent = draft.content;
+          this.journalMood = undefined;
+          this.journalTags = undefined;
+          return;
+        }
+
+        if (result.kind === 'invalid') {
+          this.journalId = null;
+          this.journalMode = 'edit';
+          this.journalContent = null;
+          this.loadError = 'This journal entry could not be found.';
+          return;
+        }
+
+        if (result.kind === 'error') {
+          this.journalId = result.id;
+          this.journalMode = 'edit';
+          this.journalContent = null;
+          this.loadError = 'Unable to load this journal entry. Please try again.';
+          return;
+        }
+
+        this.journalId = result.id;
+        this.journalMode = 'edit';
+        this.journalTitle = result.journal.title ?? '';
+        this.journalContent = result.journal.content;
+        this.journalMood = result.journal.mood ?? undefined;
+        this.journalTags = result.journal.tags;
       });
   }
 
@@ -80,6 +171,21 @@ export class JournalWritePageComponent implements OnInit, OnDestroy, PendingChan
     return extractJournalText(this.journalContent).length > 0;
   }
 
+  get editorContent(): IJournalDocument {
+    return this.journalContent ?? EMPTY_JOURNAL_DOCUMENT;
+  }
+
+  get isJournalReady(): boolean {
+    return this.journalContent !== null;
+  }
+
+  get canSaveEntry(): boolean {
+    return !this.isSaving
+      && typeof this.journalTitle === 'string'
+      && this.journalTitle.trim().length > 0
+      && this.isJournalReady;
+  }
+
   canDeactivate(): boolean {
     if (this.isSaving) {
       return false;
@@ -89,7 +195,9 @@ export class JournalWritePageComponent implements OnInit, OnDestroy, PendingChan
       return true;
     }
 
+    this.pendingNavigationUrl = 'back';
     this.showUnsavedChangesModal = true;
+
     return false;
   }
 
@@ -106,7 +214,19 @@ export class JournalWritePageComponent implements OnInit, OnDestroy, PendingChan
     this.persistDraft();
   }
 
+  onTitleInput(event: Event): void {
+    const input = event.target;
+    if (input instanceof HTMLInputElement) {
+      this.journalTitle = input.value;
+      this.onTitleChange();
+    }
+  }
+
   onJournalContentChange(content: IJournalDocument): void {
+    if (JSON.stringify(content) === JSON.stringify(this.journalContent)) {
+      return;
+    }
+
     this.journalContent = content;
     this.isDirty = true;
     this.persistDraft();
@@ -117,6 +237,9 @@ export class JournalWritePageComponent implements OnInit, OnDestroy, PendingChan
   }
 
   saveDraft(): void {
+    if (this.journalMode !== 'create') {
+      return;
+    }
     this.persistDraft();
     this.menuOpen = false;
   }
@@ -137,14 +260,23 @@ export class JournalWritePageComponent implements OnInit, OnDestroy, PendingChan
   discardChanges(): void {
     this.showUnsavedChangesModal = false;
     this.allowDeactivate = true;
-    this.draftService.clear();
+
+    if (this.journalId === null) {
+      this._draftService.clear();
+    }
+
     this.menuOpen = false;
     this.isDirty = false;
 
-    const targetUrl = this.pendingNavigationUrl ?? '/journal';
+    const targetUrl = this.pendingNavigationUrl;
     this.pendingNavigationUrl = null;
 
-    this.router.navigateByUrl(targetUrl);
+    if (targetUrl === 'back') {
+      this.navigateBack();
+      return;
+    }
+
+    this._router.navigateByUrl(targetUrl ?? '/journal');
   }
 
   discardDraft(): void {
@@ -155,27 +287,37 @@ export class JournalWritePageComponent implements OnInit, OnDestroy, PendingChan
       return;
     }
 
-    this.draftService.clear();
+    if (this.journalId === null) {
+      this._draftService.clear();
+    }
     this.menuOpen = false;
     this.isDirty = false;
-    this.router.navigate(['/journal']);
+    this._router.navigate(['/journal']);
   }
 
   backToJournal(): void {
-    if (!this.isDirty) {
-      this.router.navigate(['/journal']);
+    if (this.isDirty) {
+      this.pendingNavigationUrl = 'back';
+      this.showUnsavedChangesModal = true;
       return;
     }
 
-    this.pendingNavigationUrl = '/journal';
-    this.showUnsavedChangesModal = true;
+    this.navigateBack();
+  }
+
+  private navigateBack(): void {
+    if (window.history.length > 1) {
+      this._location.back();
+    } else {
+      this._router.navigate(['/journal']);
+    }
   }
 
   saveEntry(): void {
-    const title = this.journalTitle.trim();
+    const title = (this.journalTitle ?? '').trim();
     const content = this.journalContent;
 
-    if (this.isSaving || !title) {
+    if (this.isSaving || !title || content === null) {
       return;
     }
 
@@ -183,31 +325,49 @@ export class JournalWritePageComponent implements OnInit, OnDestroy, PendingChan
     this.saveError = '';
     this.pendingNavigationUrl = null;
 
-    this.journalService.create({
+    const payload = {
       title,
       content,
-    })
-      .subscribe({
-        next: () => {
-          this.isSaving = false;
-          this.draftService.clear();
-          this.isDirty = false;
-          this.showUnsavedChangesModal = false;
-          this.router.navigate(['/journal']);
-        },
-        error: () => {
-          this.isSaving = false;
-          this.saveError = 'Unable to save your journal. Please try again.';
-        },
+      mood: this.journalMood,
+      tags: this.journalTags,
+    };
+    const journalId = this.journalId;
+    const onSaveSuccess = () => {
+      this.isSaving = false;
+      if (journalId === null) {
+        this._draftService.clear();
+      }
+      this.isDirty = false;
+      this.showUnsavedChangesModal = false;
+
+      if (journalId) {
+        this._router.navigate(['/journal/list']);
+        return;
+      }
+
+      this._router.navigate(['/journal']);
+    };
+    const onSaveError = () => {
+      this.isSaving = false;
+      this.saveError = 'Unable to save your journal. Please try again.';
+    };
+
+    if (journalId === null) {
+      this._journalService.create(payload).subscribe({
+        next: onSaveSuccess,
+        error: onSaveError,
       });
+    } else {
+      this._journalService.update(journalId, payload).subscribe({
+        next: onSaveSuccess,
+        error: onSaveError,
+      });
+    }
   }
 
   private persistDraft(): void {
-    this.draftService.update(this.journalTitle, this.journalContent);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    if (this.journalId === null && this.journalContent !== null) {
+      this._draftService.update(this.journalTitle, this.journalContent);
+    }
   }
 }

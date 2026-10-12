@@ -42,22 +42,22 @@ export class JournalService {
         );
     }
 
-    findOne(id: number): Observable<IJournal> {
-        return this.http.get<IJournal>(
+    findOne(id: number): Observable<IApiResponse<IJournal>> {
+        return this.http.get<IApiResponse<IJournal>>(
             `${this.api}/${id}`,
         );
     }
 
-    update(id: number, payload: IJournalPayload): Observable<IJournal> {
-        return this.http.patch<IJournal>(
+    update(id: number, payload: IJournalPayload): Observable<IApiResponse<IJournal>> {
+        return this.http.put<IApiResponse<IJournal>>(
             `${this.api}/${id}`,
             payload,
         );
     }
 
-    remove(id: number): Observable<void> {
-        return this.http.delete<void>(
-            `${this.api}/${id}`,
+    remove(id: number): Observable<IApiResponse<string>> {
+        return this.http.patch<IApiResponse<string>>(
+            `${this.api}/${id}`,{}
         );
     }
 }

@@ -4,13 +4,13 @@
 
     <div class="header-copy">
       <p class="eyebrow">DAYBOOK · JOURNAL</p>
-      <h1>{{ journalTitle.trim() || 'New entry' }}</h1>
+      <h1>{{ journalTitle || 'New entry' }}</h1>
     </div>
 
     <div class="header-meta">
       <span class="draft-status" aria-live="polite">
         <span class="status-dot"></span>
-        {{ isSaving ? 'Saving' : isDirty ? 'Unsaved draft' : 'Saved draft' }}
+        {{ isSaving ? 'Saving' : isDirty ? 'Unsaved changes' : journalId === null ? 'Saved draft' : 'Saved' }}
       </span>
 
       <div class="menu-wrap">
@@ -25,9 +25,13 @@
 
         @if (menuOpen) {
         <div class="menu-panel" role="menu" aria-label="Entry actions">
+          @if (journalMode === 'create') {
           <button type="button" role="menuitem" (click)="saveDraft()">Save draft</button>
+          }
           <button type="button" role="menuitem" (click)="clearFormatting()">Clear formatting</button>
+          @if (journalMode === 'create') {
           <button type="button" role="menuitem" (click)="discardDraft()">Discard draft</button>
+          }
         </div>
         }
       </div>
@@ -35,10 +39,14 @@
   </header>
 
   <main class="writing-surface">
+    @if (isLoadingEntry) {
+    <p class="status-copy" role="status">Loading journal entry...</p>
+    } @else if (loadError) {
+    <p class="error-text" role="alert">{{ loadError }}</p>
+    } @else if (isJournalReady) {
     <div class="title-row">
-      <input type="text" class="title-input" [value]="journalTitle"
-        (input)="journalTitle = $any($event.target).value; onTitleChange()" placeholder="Give this entry a title..."
-        aria-label="Journal entry title" />
+      <input type="text" class="title-input" [value]="journalTitle" (input)="onTitleInput($event)"
+        placeholder="Give this entry a title..." aria-label="Journal entry title" />
       <div class="title-meta">
         <span>{{ todayLabel }}</span>
         <span>·</span>
@@ -47,7 +55,7 @@
     </div>
 
     <div class="editor-shell">
-      <app-journal-editor [initialContent]="journalContent"
+      <app-journal-editor [initialContent]="editorContent" [editable]="true"
         (contentChange)="onJournalContentChange($event)"></app-journal-editor>
     </div>
 
@@ -61,10 +69,12 @@
       </div>
       }
 
-      <button type="button" class="save-button" (click)="saveEntry()" [disabled]="isSaving || !journalTitle.trim()">
-        {{ isSaving ? 'Saving...' : 'Save entry' }}
+      <button type="button" class="save-button" (click)="saveEntry()"
+        [disabled]="!canSaveEntry">
+        {{ isSaving ? 'Saving...' : journalMode === 'create' ? 'Save entry' : 'Save changes' }}
       </button>
     </footer>
+    }
   </main>
 </div>
 

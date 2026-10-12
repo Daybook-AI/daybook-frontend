@@ -45,7 +45,7 @@ export class RecentsJournalComponent implements OnInit {
   loadEntries(): void {
     this.isLoading = true;
 
-    this._journalService.findAll()
+    this._journalService.findAll({ pagination: { limit: 5, page: 1 } })
       .pipe(
         takeUntil(this._destroy$),
         finalize(() => {

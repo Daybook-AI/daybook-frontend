@@ -1,12 +1,12 @@
 
 import {
-  AfterViewInit,
   Component,
   ElementRef,
   EventEmitter,
   Input,
   OnChanges,
   OnDestroy,
+  OnInit,
   Output,
   SimpleChanges,
   ViewChild,
@@ -29,56 +29,58 @@ const EMPTY_DOCUMENT: IJournalDocument = {
   styleUrl: './journal-editor.scss',
 })
 export class JournalEditorComponent
-  implements AfterViewInit, OnChanges, OnDestroy {
+  implements OnInit, OnChanges, OnDestroy {
 
   @ViewChild('editorElement', { static: true })
   editorElement!: ElementRef<HTMLDivElement>;
 
-  @Input() initialContent: IJournalDocument | null = null;
+  @Input() initialContent: IJournalDocument = EMPTY_DOCUMENT;
   @Input() editable = true;
 
   @Output() contentChange =
     new EventEmitter<IJournalDocument>();
 
-  editor!: Editor;
-  ready = false;
+  editor?: Editor;
+  private suppressContentChange = false;
 
-  ngAfterViewInit(): void {
-    this.editor = new Editor({
-      element: this.editorElement.nativeElement,
+  ngOnInit(): void {
+    this.suppressContentChange = true;
+    try {
+      this.editor = new Editor({
+        element: this.editorElement.nativeElement,
 
-      extensions: [
-        StarterKit.configure({
-          heading: {
-            levels: [1, 2, 3],
+        extensions: [
+          StarterKit.configure({
+            heading: {
+              levels: [1, 2, 3],
+            },
+          }),
+        ],
+
+        content: this.initialContent,
+        editable: this.editable,
+
+        editorProps: {
+          attributes: {
+            class: 'journal-prose',
+            'aria-label': 'Journal content',
+            'data-placeholder': "What's on your mind?",
+            spellcheck: 'true',
           },
-        }),
-      ],
-
-      content: this.initialContent ?? EMPTY_DOCUMENT,
-      editable: this.editable,
-
-      editorProps: {
-        attributes: {
-          class: 'journal-prose',
-          'aria-label': 'Journal content',
-          'data-placeholder': "What's on your mind?",
-          spellcheck: 'true',
         },
-      },
 
-          onUpdate: ({ editor }) => {
-        this.contentChange.emit(
-          editor.getJSON() as IJournalDocument,
-        );
-      },
-    });
+        onUpdate: ({ editor }) => {
+          if (!this.suppressContentChange) {
+            this.contentChange.emit(
+              editor.getJSON() as IJournalDocument,
+            );
+          }
+        },
+      });
+    } finally {
+      this.suppressContentChange = false;
+    }
 
-    this.ready = true;
-
-    this.contentChange.emit(
-      this.editor.getJSON() as IJournalDocument,
-    );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -97,15 +99,27 @@ export class JournalEditorComponent
 
       // Don't reset the selection or cursor if content is unchanged.
       if (currentContent !== incomingContent) {
-        this.editor.commands.setContent(
-          this.initialContent,
-          { emitUpdate: false },
-        );
+        this.suppressContentChange = true;
+        try {
+          this.editor.commands.setContent(
+            this.initialContent,
+            { emitUpdate: false },
+          );
+        } finally {
+          this.suppressContentChange = false;
+        }
       }
     }
 
     if (changes['editable']) {
-      this.editor.setEditable(this.editable);
+      if (this.editor) {
+        this.suppressContentChange = true;
+        try {
+          this.editor.setEditable(this.editable);
+        } finally {
+          this.suppressContentChange = false;
+        }
+      }
     }
   }
 
@@ -192,6 +206,6 @@ export class JournalEditorComponent
 
   ngOnDestroy(): void {
     this.editor?.destroy();
-    this.ready = false;
+    this.editor = undefined;
   }
 }

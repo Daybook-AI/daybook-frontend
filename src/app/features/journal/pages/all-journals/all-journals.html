@@ -237,7 +237,8 @@
                 </div>
 
                 @for (entry of group.entries; track entry.id) {
-                <article (click)="openEntry(entry)" class="mb-2 cursor-pointer rounded-lg border
+                <article (click)="openEntry(entry)" (keydown)="onArticleKeydown(entry, $event)" role="button"
+                    tabindex="0" class="relative mb-2 cursor-pointer rounded-lg border
                        border-[#252830] bg-[#191B20] p-3
                        transition-colors hover:border-[#393D47]
                        active:bg-[#202329]">
@@ -250,9 +251,30 @@
                         <button type="button" aria-label="Entry actions" (click)="openEntryMenu(entry, $event)" class="flex h-6 w-6 shrink-0 items-center
                            justify-center rounded-full text-[#9A9DA5]
                            hover:bg-[#252830] hover:text-[#F4F1EA]">
-                            ⋮
+                            <svg lucideEllipsisVertical class="h-4 w-4" aria-hidden="true"></svg>
                         </button>
                     </div>
+
+                    @if (openMenuEntryId === entry.id) {
+                    <div role="menu" aria-label="Entry actions" (click)="$event.stopPropagation()" class="absolute right-3 top-10 z-30 flex min-w-40 flex-col rounded-lg border border-[#393D47]
+                               bg-[#191B20] p-1 shadow-xl">
+                        <button type="button" role="menuitem" (click)="copyEntryContent(entry, $event)" class="flex items-center gap-2 rounded-md px-3 py-2 text-left text-[11px]
+                                   text-[#F4F1EA] hover:bg-[#252830]">
+                            <svg lucideCopy class="h-3.5 w-3.5" aria-hidden="true"></svg>
+                            Copy content
+                        </button>
+                        <button type="button" role="menuitem" (click)="exportEntryAsPdf(entry, $event)" class="flex items-center gap-2 rounded-md px-3 py-2 text-left text-[11px]
+                                   text-[#F4F1EA] hover:bg-[#252830]">
+                            <svg lucideFileDown class="h-3.5 w-3.5" aria-hidden="true"></svg>
+                            Export as PDF
+                        </button>
+                        <button type="button" role="menuitem" (click)="openDeleteConfirmation(entry, $event)" class="flex items-center gap-2 rounded-md px-3 py-2 text-left text-[11px]
+                                   text-red-400 hover:bg-[#252830]">
+                            <svg lucideTrash class="h-3.5 w-3.5" aria-hidden="true"></svg>
+                            Delete
+                        </button>
+                    </div>
+                    }
 
                     <p class="mt-1.5 line-clamp-2 text-[11px]
                          leading-[1.65] text-[#C0C1C7]">
@@ -323,6 +345,13 @@
                 </button>
                 }
             </div>
+            }
+
+            @if (showDeleteConfirmation) {
+            <app-confirm-box title="Delete this journal?"
+                message="This action will remove the journal. Are you sure you want to continue?"
+                confirmText="Delete journal" cancelText="Keep journal" variant="danger" (confirm)="confirmDelete()"
+                (cancel)="cancelDelete()" />
             }
         </main>
 

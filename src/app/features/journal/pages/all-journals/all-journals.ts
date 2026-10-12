@@ -1,5 +1,5 @@
 
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -24,9 +24,17 @@ import {
 } from '../../interfaces/journal.interface';
 import { extractJournalText } from '../../../../core/services/journal-draft.service';
 import { GoBackComponent } from '../../../../core/shared/components/go-back/go-back';
+import { ConfirmBoxComponent } from '../../../../core/shared/components/confirm-box/confirm-box';
 import { IJournalDocument } from '../../../../core/shared/interfaces/journal-document.interface';
 import { Router } from '@angular/router';
 import { DebounceService } from '../../../../core/services/debounce.service';
+import {
+  LucideCopy,
+  LucideEllipsisVertical,
+  LucideFileDown,
+  LucideTrash,
+} from '@lucide/angular';
+import { toast } from 'ngx-sonner';
 
 interface IJournalListEntry extends IJournalViewEntry {
   createdAt: Date;
@@ -43,6 +51,11 @@ interface IJournalListEntry extends IJournalViewEntry {
     BottomNavigationComponent,
     PaginationComponent,
     GoBackComponent,
+    ConfirmBoxComponent,
+    LucideCopy,
+    LucideEllipsisVertical,
+    LucideFileDown,
+    LucideTrash,
   ],
   templateUrl: './all-journals.html',
 })
@@ -58,6 +71,7 @@ export class AllJournalsComponent implements OnInit {
   selectedSort: 'asc' | 'desc' = 'desc';
 
   currentPage = 1;
+
   pageSize = 10;
 
   showDateFilter = false;
@@ -71,6 +85,10 @@ export class AllJournalsComponent implements OnInit {
 
   isLoading = false;
   totalEntries = 0;
+
+  showDeleteConfirmation = false;
+  private _entryToDelete: IJournalViewEntry | null = null;
+
 
   journalGroups: IJournalGroup[] = [];
   allEntries: IJournalListEntry[] = [];
@@ -218,8 +236,8 @@ export class AllJournalsComponent implements OnInit {
   }
 
   openEntry(entry: IJournalViewEntry): void {
-    console.log('Open journal:', entry.id);
-    // Later: navigate to /journal/:id
+    this.openMenuEntryId = null;
+    this._router.navigate(['/journal', entry.id]);
   }
 
   createEntry(): void {
@@ -232,9 +250,81 @@ export class AllJournalsComponent implements OnInit {
     // Later: use Angular Router or Location
   }
 
+  openMenuEntryId: number | null = null;
+
   openEntryMenu(entry: IJournalViewEntry, event: Event): void {
     event.stopPropagation();
-    console.log('Open menu for:', entry.id);
+    this.openMenuEntryId =
+      this.openMenuEntryId === entry.id ? null : entry.id;
+  }
+
+  onArticleKeydown(entry: IJournalViewEntry, event: KeyboardEvent): void {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openEntry(entry);
+    }
+  }
+
+  copyEntryContent(entry: IJournalViewEntry, event: Event): void {
+    event.stopPropagation();
+    this.openMenuEntryId = null;
+
+    this._journalService.findOne(entry.id)
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe({
+        next: (journal) => {
+          const content = extractJournalText(journal.data.content);
+
+          if (!navigator.clipboard?.writeText) {
+            toast.warning('Clipboard access is not available in this browser.');
+            return;
+          }
+
+          void navigator.clipboard.writeText(content).then(
+            () => toast.success('Entry content copied.'),
+            () => toast.error('Unable to copy this entry. Please try again.'),
+          );
+        },
+        error: () => {
+          toast.error('Unable to load this entry. Please try again.');
+        },
+      });
+  }
+
+  exportEntryAsPdf(entry: IJournalViewEntry, event: Event): void {
+    event.stopPropagation();
+    this.openMenuEntryId = null;
+
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) {
+      toast.warning('Allow pop-ups to export this entry as a PDF.');
+      return;
+    }
+
+    this._journalService.findOne(entry.id)
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe({
+        next: (journal) => {
+          const content = extractJournalText(journal.data.content);
+          printWindow.document.open();
+          printWindow.document.write(
+            this._createPrintableDocument(journal.data.title, content),
+          );
+          printWindow.document.close();
+          window.setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+          }, 250);
+        },
+        error: () => {
+          printWindow.close();
+          toast.error('Unable to load this entry. Please try again.');
+        },
+      });
   }
 
   loadEntries(): void {
@@ -324,6 +414,72 @@ export class AllJournalsComponent implements OnInit {
 
   goToHome(): void {
     this._router.navigate(['/journal'])
+  }
+
+  openDeleteConfirmation(entry: IJournalViewEntry, event: Event): void {
+    event.stopPropagation();
+    this.openMenuEntryId = null;
+    this._entryToDelete = entry;
+    this.showDeleteConfirmation = true;
+  }
+
+  cancelDelete(): void {
+    this.showDeleteConfirmation = false;
+    this._entryToDelete = null;
+  }
+
+  confirmDelete(): void {
+    const entry = this._entryToDelete;
+    if (!entry) {
+      return;
+    }
+
+    this._journalService.remove(entry.id)
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.showDeleteConfirmation = false;
+          this._entryToDelete = null;
+          this.loadEntries();
+          toast.success(res.message || 'success');
+        },
+        error: () => {
+          toast.error('Unable to delete this entry. Please try again.');
+        },
+      });
+  }
+
+  private _createPrintableDocument(title: string, content: string): string {
+    const escapeHtml = (value: string) =>
+      value.replace(/[&<>"']/g, (character) => {
+        const entities: Record<string, string> = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        };
+
+        return entities[character];
+      });
+
+    return `<!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${escapeHtml(title)}</title>
+          <style>
+            body { max-width: 720px; margin: 48px auto; padding: 0 24px; color: #222; font: 16px/1.7 Arial, sans-serif; }
+            h1 { margin-bottom: 24px; font-size: 28px; }
+            main { white-space: pre-wrap; overflow-wrap: anywhere; }
+            @media print { body { margin: 0 auto; } }
+          </style>
+        </head>
+        <body>
+          <h1>${escapeHtml(title)}</h1>
+          <main>${escapeHtml(content)}</main>
+        </body>
+      </html>`;
   }
 
   private _normalizeCurrentPage(): void {
