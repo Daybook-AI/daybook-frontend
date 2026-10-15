@@ -59,20 +59,56 @@
         (contentChange)="onJournalContentChange($event)"></app-journal-editor>
     </div>
 
-    <footer class="actions-bar">
-      @if (saveError) {
-      <p class="error-text" role="alert">{{ saveError }}</p>
-      } @else {
-      <div class="status-copy">
-        <span class="status-icon">♙</span>
-        <span>Private &amp; encrypted</span>
-      </div>
-      }
+    @if(journalId){
+    <app-entry-analysis [journalId]="journalId"></app-entry-analysis>
+    }
 
-      <button type="button" class="save-button" (click)="saveEntry()"
-        [disabled]="!canSaveEntry">
-        {{ isSaving ? 'Saving...' : journalMode === 'create' ? 'Save entry' : 'Save changes' }}
-      </button>
+    <footer class="actions-bar flex flex-wrap items-center justify-between gap-4
+         border-t border-[#302D29] px-4 py-4 sm:px-6">
+
+      <!-- Status / Error -->
+      <!-- <div class="min-w-0 flex-1">
+        @if (saveError) {
+        <p class="flex items-center gap-2 text-sm text-red-400" role="alert">
+          <svg lucideCircleAlert class="h-4 w-4 shrink-0" aria-hidden="true"></svg>
+          <span>{{ saveError }}</span>
+        </p>
+        } @else {
+        <div class="flex items-center gap-2 text-xs text-[#8C8982]">
+          <svg lucideShieldCheck class="h-4 w-4 shrink-0 text-[#7E9B80]" aria-hidden="true"></svg>
+          <span>Private &amp; encrypted</span>
+        </div>
+        }
+      </div> -->
+
+      <!-- Actions -->
+      <div class="flex shrink-0 items-center justify-end gap-3">
+        @if (journalId) {
+        <app-analyse-button [journalId]="journalId"></app-analyse-button>
+        }
+
+        <button type="button" class="save-button inline-flex h-10 items-center justify-center gap-2
+             rounded-lg border border-[#D9A13B] bg-[#F5B544]
+             px-5 text-sm font-semibold text-[#211B10]
+             transition-all duration-200
+             hover:border-[#E9B950] hover:bg-[#E9B950]
+             active:scale-[0.98]
+             focus-visible:outline-none focus-visible:ring-2
+             focus-visible:ring-[#F5B544]/50 focus-visible:ring-offset-2
+             focus-visible:ring-offset-[#151515]
+             disabled:cursor-not-allowed disabled:opacity-50" (click)="saveEntry()" [disabled]="!canSaveEntry">
+
+          @if (isSaving) {
+          <span class="inline-block h-4 w-4 animate-spin rounded-full
+                 border-2 border-current border-r-transparent" aria-hidden="true">
+          </span>
+          }
+
+          <span>
+            {{ isSaving ? 'Saving...' : journalMode === 'create' ? 'Save entry' : 'Save changes' }}
+          </span>
+        </button>
+      </div>
     </footer>
     }
   </main>

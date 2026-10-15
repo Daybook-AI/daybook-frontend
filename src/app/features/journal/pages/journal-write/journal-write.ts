@@ -32,12 +32,14 @@ import { GoBackComponent } from '../../../../core/shared/components/go-back/go-b
 import { BottomNavigationComponent } from '../../../../core/shared/components/bottom-navigation/bottom-navigation';
 import { Location } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AnalyseButton } from '../../../entry-analysis/components/analyse-button/analyse-button';
+import { EntryAnalysisComponent } from '../../../entry-analysis/components/entry-analyse/entry-analysis';
 type JournalMode = 'create' | 'edit';
 
 @Component({
   selector: 'app-journal-write-page',
   standalone: true,
-  imports: [JournalEditorComponent, UnsavedChangesModalComponent, GoBackComponent, BottomNavigationComponent],
+  imports: [JournalEditorComponent, UnsavedChangesModalComponent, GoBackComponent, BottomNavigationComponent, AnalyseButton, EntryAnalysisComponent],
   templateUrl: './journal-write.html',
   styleUrl: './journal-write.scss',
 })
@@ -184,6 +186,11 @@ export class JournalWritePageComponent implements OnInit, PendingChangesComponen
       && typeof this.journalTitle === 'string'
       && this.journalTitle.trim().length > 0
       && this.isJournalReady;
+  }
+
+  hasContentChanged(text: string): boolean {
+    const originalText = extractJournalText(this.journalContent);
+    return JSON.stringify(originalText) === JSON.stringify(originalText);
   }
 
   canDeactivate(): boolean {
