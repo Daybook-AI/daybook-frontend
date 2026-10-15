@@ -1,0 +1,251 @@
+<section class="analysis-card" aria-labelledby="analysis-heading">
+
+    <!-- Header -->
+    <header class="analysis-header">
+        <button type="button" class="analysis-heading-button" (click)="toggleExpanded()" [attr.aria-expanded]="expanded()"
+            aria-controls="analysis-content">
+
+            <span class="analysis-icon">
+                <svg lucideSparkles class="h-5 w-5" aria-hidden="true">
+                </svg>
+            </span>
+
+            <span class="analysis-heading-copy">
+                <span id="analysis-heading" class="analysis-title">
+                    AI Entry Analysis
+                </span>
+
+                <span class="analysis-subtitle">
+                    AI-generated insights
+                </span>
+            </span>
+
+            @if (analysis) {
+            <span class="analysis-status" [class.status-outdated]="isOutdated()" [class.status-current]="!isOutdated()">
+
+                <span class="status-dot"></span>
+
+                {{ isOutdated() ? 'Outdated' : 'Up to date' }}
+            </span>
+            }
+        </button>
+
+        <button type="button" class="collapse-button" (click)="toggleExpanded()"
+            [attr.aria-label]="expanded() ? 'Collapse analysis' : 'Expand analysis'" [attr.aria-expanded]="expanded()"
+            aria-controls="analysis-content">
+
+            <svg lucideChevronDown class="h-4 w-4 transition-transform duration-200" [class.rotate-180]="expanded()"
+                aria-hidden="true">
+            </svg>
+        </button>
+    </header>
+
+    @if (expanded()) {
+    <div id="analysis-content" class="analysis-content">
+
+        <!-- Generating / regenerating status -->
+        @if (isAnalyzing()) {
+        <div class="generation-banner" role="status" aria-live="polite">
+
+            <span class="generation-icon">
+                <svg lucideLoaderCircle class="h-4 w-4 animate-spin" aria-hidden="true">
+                </svg>
+            </span>
+
+            <span class="generation-copy">
+                <span class="generation-title">
+                    {{ analysis ? 'Regenerating analysis...' : 'Analysing your entry...' }}
+                </span>
+
+                <span class="generation-description">
+                    {{ analysis
+                    ? 'Your previous insights remain available.'
+                    : 'Discovering themes and reflections.' }}
+                </span>
+            </span>
+
+            <span class="live-indicator">LIVE</span>
+        </div>
+        }
+
+        <!-- Outdated notice -->
+        @if (analysis && isOutdated()) {
+        <div class="outdated-notice" role="status">
+            <svg lucideClock class="h-4 w-4 shrink-0" aria-hidden="true">
+            </svg>
+
+            <span>
+                Your journal has changed. These insights describe an
+                earlier version of this entry.
+            </span>
+        </div>
+        }
+
+        <!-- Error notice -->
+        @if (error) {
+        <div class="analysis-error" role="alert">
+            <svg lucideCircleAlert class="h-4 w-4 shrink-0" aria-hidden="true">
+            </svg>
+
+            <span>{{ error }}</span>
+        </div>
+        }
+
+        <!-- Empty state -->
+        @if (!analysis) {
+        <div class="analysis-empty">
+            <span class="empty-icon">
+                <svg lucideSparkles class="h-6 w-6" aria-hidden="true">
+                </svg>
+            </span>
+
+            <h3 class="empty-title">
+                Understand your entry better
+            </h3>
+
+            <p class="empty-description">
+                Get a summary, discover recurring themes, reflect on
+                your emotions, and find meaningful next steps.
+            </p>
+
+            <button type="button" class="regenerate-button" (click)="regenerateAnalysis()" [disabled]="isAnalyzing()">
+
+                @if (isAnalyzing()) {
+                <svg lucideLoaderCircle class="h-4 w-4 animate-spin" aria-hidden="true">
+                </svg>
+                Analysing...
+                } @else {
+                <svg lucideSparkles class="h-4 w-4" aria-hidden="true">
+                </svg>
+                Analyse entry
+                }
+            </button>
+        </div>
+        }
+
+        <!-- Existing analysis -->
+        @if (analysis) {
+
+        <!-- Summary -->
+        @if (analysis.summary) {
+        <section class="analysis-section">
+            <div class="section-heading-row">
+                <h3 class="section-label">SUMMARY</h3>
+
+                @if (isOutdated()) {
+                <span class="previous-version-label">
+                    Previous version
+                </span>
+                }
+            </div>
+
+            <p class="summary-text">
+                {{ analysis.summary }}
+            </p>
+        </section>
+        }
+
+        <!-- Key themes -->
+        @if (analysis.themes.length) {
+        <section class="analysis-section">
+            <h3 class="section-label">KEY THEMES</h3>
+
+            <div class="chip-list">
+                @for (theme of analysis.themes; track theme) {
+                <span class="analysis-chip theme-chip">
+                    {{ theme }}
+                </span>
+                }
+            </div>
+        </section>
+        }
+
+        <!-- Emotional tone -->
+        @if (analysis.emotionalTone.length) {
+        <section class="analysis-section">
+            <h3 class="section-label">EMOTIONAL TONE</h3>
+
+            <div class="chip-list">
+                @for (tone of analysis.emotionalTone; track tone; let i = $index) {
+                <span class="analysis-chip tone-chip">
+                    <span class="tone-dot" [class.tone-dot-primary]="i === 0" [class.tone-dot-secondary]="i === 1">
+                    </span>
+
+                    {{ tone }}
+                </span>
+                }
+            </div>
+        </section>
+        }
+
+        <!-- Reflection -->
+        @if (analysis.reflection) {
+        <section class="analysis-section">
+            <h3 class="section-label">REFLECTION</h3>
+
+            <blockquote class="reflection-card">
+                <p>{{ analysis.reflection }}</p>
+            </blockquote>
+        </section>
+        }
+
+        <!-- Suggested actions -->
+        @if (analysis.suggestedActions.length) {
+        <section class="analysis-section">
+            <h3 class="section-label">SUGGESTED ACTIONS</h3>
+
+            <ul class="suggestion-list">
+                @for (
+                action of analysis.suggestedActions;
+                track action
+                ) {
+                <li class="suggestion-item">
+                    <svg lucideCircleCheck class="suggestion-icon" aria-hidden="true">
+                    </svg>
+
+                    <span>{{ action }}</span>
+                </li>
+                }
+            </ul>
+        </section>
+        }
+        }
+
+        <!-- Footer -->
+        <footer class="analysis-footer">
+            <div class="analysis-meta">
+                @if (analysis) {
+                <span>
+                    Analysed {{ formattedCreatedAt }}
+                </span>
+
+                @if (analysis.aiModel) {
+                <span class="meta-separator">·</span>
+                <span>{{ analysis.aiModel }}</span>
+                }
+                } @else {
+                <span>Generated insights appear here</span>
+                }
+            </div>
+
+            @if (analysis) {
+            <button type="button" class="regenerate-button footer-regenerate-button" (click)="regenerateAnalysis()"
+                [disabled]="isAnalyzing()">
+
+                @if (isAnalyzing()) {
+                <svg lucideLoaderCircle class="h-3.5 w-3.5 animate-spin" aria-hidden="true">
+                </svg>
+
+                Synthesizing...
+                } @else {
+                <svg lucideRefreshCw class="h-3.5 w-3.5" aria-hidden="true">
+                </svg>
+
+                Regenerate
+                }
+            </button>
+            }
+        </footer>
+    </div>
+    }
+</section>
